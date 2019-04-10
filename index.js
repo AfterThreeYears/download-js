@@ -35,7 +35,7 @@ const download = ({method = 'GET', url, body, customFilename, headers = {'Conten
       if (disposition && disposition.indexOf('attachment') !== -1) {
         const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
         const matches = filenameRegex.exec(disposition);
-        if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+        if (matches != null && matches[1]) filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
       }
       const type = xhr.getResponseHeader('Content-Type');
       const blob = new Blob([this.response], {type});
