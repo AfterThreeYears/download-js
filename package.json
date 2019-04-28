@@ -2,14 +2,23 @@
   "name": "simple-export",
   "version": "1.0.4",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsc -w",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node": "^11.13.8",
     "file-saver": "^1.3.8",
-    "mime": "^2.2.2"
+    "mime": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.0",
+    "@types/mime": "^2.0.1",
+    "ts-loader": "^5.4.4",
+    "typescript": "^3.4.5"
   }
 }
