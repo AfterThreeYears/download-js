@@ -1,19 +1,17 @@
-import fileSaver from '../11node_modules/@types/file-saver';
-import mime from '../11node_modules/@types/mime';
+import fileSaver from 'file-saver';
+import mime from 'mime';
+import { isObject, isNull } from 'lodash';
 
 function getType(filename: string) {
   const fileNameArray = filename.split('.');
-  if (fileNameArray.length <= 1) return false;
+  if (fileNameArray.length <= 1) return;
   return fileNameArray.pop();
 }
 
-function isObject(value: any) {
-  return Object.prototype.toString.call(value) === '[object Object]';
-}
-
 const isProd = process.env.NODE_ENV === 'production';
+const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
 
-export enum Method {
+enum Method {
   GET = "GET",
   POST = "POST",
 }
@@ -29,8 +27,6 @@ interface Option {
   customFilename: string
   headers: IHeaders
 }
-
-const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
 
 /**
  * 下载文件
@@ -49,29 +45,30 @@ function download({
 }: Option) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    console.log('[xhr]', xhr);
     xhr.open(method, url);
     xhr.responseType = 'blob';
     xhr.onload = function() {
+      let error: Error | null = null;
+      const type = xhr.getResponseHeader('Content-Type');
+      const disposition = xhr.getResponseHeader('Content-Disposition') || '';
+      const matches = filenameRegex.exec(disposition);
+      let filename = '';
       try {
         if (this.readyState !== 4 || this.status !== 200) {
-          throw new Error(`readyState is ${this.readyState}, status is ${this.status}`);
+          error = new Error(`readyState is ${this.readyState}, status is ${this.status}`);
+        } else if (isNull(type)) {
+          error = new Error('Content-Type为空');
+        } else if (!disposition.includes('attachment')) {
+          error = new Error('Content-Disposition有误');
         }
-        const type = xhr.getResponseHeader('Content-Type');
-        if (!type) {
-          throw new Error('Content-Type为空');
+        if (error) {
+          throw error;
         }
-        const disposition = xhr.getResponseHeader('Content-Disposition') || '';
-        if (!disposition.includes('attachment')) {
-          throw new Error('Content-Disposition有误');
-        }
-        const matches = filenameRegex.exec(disposition);
-        let filename = '';
-        if (matches != null && matches[1]) {
+        if (Array.isArray(matches) && matches[1]) {
           filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
         }
-        const blob = new Blob([this.response], { type });
-        const extension = getType(filename) || mime.getExtension(type);
+        const blob = new Blob([this.response], { type: type as string });
+        const extension = getType(filename) || mime.getExtension(type as string);
         /**
          * 1.有自定义名字，那么需要使用自定义名字 + 后缀
          * 2.无自定义名字，那么需要使用后端名字
