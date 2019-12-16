@@ -26,6 +26,7 @@ interface Option {
   body: string
   customFilename: string
   headers: IHeaders
+  checkResponse: (response: any) => boolean
 }
 
 /**
@@ -42,27 +43,23 @@ function download({
   body,
   customFilename,
   headers = {'Content-type': 'application/json'},
+  checkResponse = () => true,
 }: Option) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url);
     xhr.responseType = 'blob';
     xhr.onload = function() {
-      let error: Error | null = null;
       const type = xhr.getResponseHeader('Content-Type');
       const disposition = xhr.getResponseHeader('Content-Disposition') || '';
       const matches = filenameRegex.exec(disposition);
       let filename = '';
       try {
         if (this.readyState !== 4 || this.status !== 200) {
-          error = new Error(`readyState is ${this.readyState}, status is ${this.status}`);
-        } else if (isNull(type)) {
-          error = new Error('Content-Type为空');
-        } else if (!disposition.includes('attachment')) {
-          error = new Error('Content-Disposition有误');
+          return reject(new Error(`readyState is ${this.readyState}, status is ${this.status}`));
         }
-        if (error) {
-          throw error;
+        if (!checkResponse(this.response)) {
+          return reject(new Error('checkResponse fail'));
         }
         if (Array.isArray(matches) && matches[1]) {
           filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
@@ -81,7 +78,7 @@ function download({
           fullName = filename;
         }
         fileSaver.saveAs(blob, fullName);
-        resolve();
+        resolve(this.response);
       } catch (error) {
         reject(new Error(`下载失败: ${isProd ? '请稍后再试' : error.message}`));
       }
