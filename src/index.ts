@@ -59,7 +59,7 @@ function download({
           return reject(new Error(`readyState is ${this.readyState}, status is ${this.status}`));
         }
         if (!checkResponse(this.response)) {
-          return reject(new Error('checkResponse fail'));
+          return reject(this.response);
         }
         if (Array.isArray(matches) && matches[1]) {
           filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
