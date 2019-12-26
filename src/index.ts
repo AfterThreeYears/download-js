@@ -11,7 +11,7 @@ function getType(filename: string) {
 const isProd = process.env.NODE_ENV === 'production';
 const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
 
-enum Method {
+export enum Method {
   GET = "GET",
   POST = "POST",
 }
@@ -21,12 +21,12 @@ interface IHeaders {
 }
 
 interface Option {
-  method: Method
+  method?: Method
   url: string
-  body: string
-  customFilename: string
-  headers: IHeaders
-  checkResponse: (response: any) => boolean
+  body?: string
+  customFilename?: string
+  headers?: IHeaders
+  checkResponse?: (response: any) => boolean
 }
 
 /**
