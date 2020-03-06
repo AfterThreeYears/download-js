@@ -1,6 +1,6 @@
 import fileSaver from 'file-saver';
 import mime from 'mime';
-import { isObject, isNull } from 'lodash';
+import { isObject } from 'lodash';
 
 function getType(filename: string) {
   const fileNameArray = filename.split('.');
@@ -27,6 +27,8 @@ interface Option {
   customFilename?: string
   headers?: IHeaders
   checkResponse?: (response: any) => boolean
+  // 超时时间
+  timeout?: number;
 }
 
 /**
@@ -44,10 +46,12 @@ function download({
   customFilename,
   headers = {'Content-type': 'application/json'},
   checkResponse = () => true,
+  timeout = 1000 * 60,
 }: Option) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url);
+    xhr.timeout = timeout;
     xhr.responseType = 'blob';
     xhr.onload = function() {
       const type = xhr.getResponseHeader('Content-Type');
@@ -82,6 +86,9 @@ function download({
       } catch (error) {
         reject(new Error(`下载失败: ${isProd ? '请稍后再试' : error.message}`));
       }
+    };
+    xhr.ontimeout = function (e) {
+      reject(new Error("xhr call timeout"))
     };
     xhr.onerror = reject;
     if (isObject(headers)) {
